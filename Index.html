@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aquaECO Field Ops — Self-Hosted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b1f1e; --paper:#f3ede0; --paper2:#ece3d0; --line:#cdbfa0;
+  --teal:#0f3d3e; --teal2:#1a5c5a; --aqua:#2fb6a8; --aqua-soft:#d7ece7;
+  --amber:#c98a2c; --coral:#c1573c; --plum:#6a4c8c;
+  --card:#fffdf7; --muted:#6b6355; --shadow: 0 1px 0 rgba(11,31,30,.06), 0 8px 20px -10px rgba(11,31,30,.18);
+}
+:root[data-theme="dark"]{
+  --ink:#eee7d6; --paper:#0d1917; --paper2:#122320; --line:#274240;
+  --teal:#8fe0d4; --teal2:#6ecdc0; --aqua:#3fd6c4; --aqua-soft:#123330;
+  --amber:#e0ab5c; --coral:#e18267; --plum:#b79add;
+  --card:#0f2321; --muted:#9db3ae; --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 24px -12px rgba(0,0,0,.5);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#eee7d6; --paper:#0d1917; --paper2:#122320; --line:#274240;
+    --teal:#8fe0d4; --teal2:#6ecdc0; --aqua:#3fd6c4; --aqua-soft:#123330;
+    --amber:#e0ab5c; --coral:#e18267; --plum:#b79add;
+    --card:#0f2321; --muted:#9db3ae; --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 24px -12px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Manrope',sans-serif;
+  min-height:100vh;
+  background-image:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--aqua) 8%, transparent), transparent 40%),
+    radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--plum) 6%, transparent), transparent 35%);
+}
+.wrap{max-width:920px;margin:0 auto;padding:14px 14px 90px;}
+header.top{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 4px 10px;
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .mark{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(155deg,var(--teal),var(--aqua));
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+  box-shadow:var(--shadow);
+  flex:none;
+}
+.brand h1{font-family:'Fraunces',serif;font-weight:700;font-size:19px;margin:0;letter-spacing:.2px;}
+.brand p{margin:0;font-size:11px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;}
+.theme-btn{
+  border:1px solid var(--line);background:var(--card);color:var(--ink);
+  width:34px;height:34px;border-radius:9px;font-size:15px;cursor:pointer;flex:none;
+}
+
+nav.tabs{
+  display:flex;gap:4px;overflow-x:auto;padding:2px 2px 12px;
+  scrollbar-width:none;
+}
+nav.tabs::-webkit-scrollbar{display:none;}
+nav.tabs button{
+  flex:none;border:1px solid var(--line);background:var(--card);color:var(--muted);
+  padding:8px 14px;border-radius:999px;font-family:'Manrope';font-weight:700;font-size:12.5px;
+  cursor:pointer;white-space:nowrap;transition:.15s;
+}
+nav.tabs button.active{background:var(--teal);color:var(--paper);border-color:var(--teal);}
+
+.panel{display:none;}
+.panel.active{display:block;animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---- Dashboard ---- */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+@media(min-width:560px){.stat-grid{grid-template-columns:repeat(4,1fr);}}
+.stat{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);
+}
+.stat .num{font-family:'Fraunces';font-size:26px;font-weight:700;color:var(--teal2);}
+.stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.section-title{font-family:'Fraunces';font-weight:600;font-size:15px;margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
+.progress-bar{height:8px;border-radius:6px;background:var(--paper2);overflow:hidden;border:1px solid var(--line);}
+.progress-bar > div{height:100%;background:linear-gradient(90deg,var(--aqua),var(--teal2));}
+.funnel-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12.5px;}
+.funnel-row .flabel{width:110px;flex:none;color:var(--muted);}
+.funnel-row .fcount{width:26px;flex:none;text-align:right;font-family:'IBM Plex Mono';font-weight:600;}
+
+/* ---- Filters ---- */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.filters select, .filters input[type=text]{
+  font-family:'Manrope';font-size:12.5px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);
+}
+.filters input[type=text]{flex:1;min-width:120px;}
+
+/* ---- Contact cards ---- */
+.ccard{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;
+  box-shadow:var(--shadow);
+}
+.ccard-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.ccard-head h3{font-family:'Fraunces';font-size:15.5px;margin:0 0 2px;font-weight:600;}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase;}
+.tag.tier1{background:var(--aqua-soft);color:var(--teal2);}
+.tag.tier2{background:color-mix(in srgb, var(--amber) 22%, transparent);color:var(--amber);}
+.tag.tier3{background:color-mix(in srgb, var(--plum) 20%, transparent);color:var(--plum);}
+.tag.state{background:var(--paper2);color:var(--muted);}
+.notes-line{font-size:12px;color:var(--muted);margin:8px 0;line-height:1.4;}
+.contact-row{font-size:12.5px;margin:3px 0;display:flex;gap:6px;align-items:baseline;}
+.contact-row a{color:var(--teal2);text-decoration:none;font-weight:600;}
+.contact-row a:hover{text-decoration:underline;}
+.ccard-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.btn{
+  font-family:'Manrope';font-weight:700;font-size:11.5px;padding:7px 11px;border-radius:9px;border:1px solid var(--line);
+  background:var(--paper2);color:var(--ink);text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+}
+.btn.wa{background:#e9f7ef;border-color:#bfe6cd;color:#1f7a44;}
+:root[data-theme="dark"] .btn.wa, :root:not([data-theme="light"]) .btn.wa{background:#123326;border-color:#1e5238;color:#8fe6ac;}
+.btn.fb{background:#eaf1fb;border-color:#c9dbf5;color:#2456a6;}
+:root[data-theme="dark"] .btn.fb, :root:not([data-theme="light"]) .btn.fb{background:#12233a;border-color:#20406b;color:#9cc0f2;}
+.btn.primary{background:var(--teal);color:var(--paper);border-color:var(--teal);}
+.status-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+select.status-sel{
+  font-family:'Manrope';font-weight:700;font-size:11.5px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);
+}
+textarea.note-in{
+  width:100%;margin-top:8px;font-family:'Manrope';font-size:12px;padding:8px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);resize:vertical;min-height:38px;
+}
+.status-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+
+/* ---- Sequence ---- */
+.seq-item{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow);
+  display:flex;gap:12px;align-items:flex-start;
+}
+.seq-item.done{opacity:.55;}
+.seq-check{
+  width:24px;height:24px;border-radius:7px;border:2px solid var(--teal2);flex:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;margin-top:2px;background:var(--card);
+}
+.seq-item.done .seq-check{background:var(--teal2);color:var(--paper);}
+.seq-week{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--aqua);font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.seq-item h4{font-family:'Fraunces';font-size:15px;margin:2px 0 5px;font-weight:600;}
+.seq-item p{margin:3px 0;font-size:12.5px;line-height:1.45;color:var(--ink);}
+.seq-item .meta{font-size:11.5px;color:var(--muted);margin-top:6px;}
+.seq-item .meta b{color:var(--ink);}
+
+/* ---- Templates ---- */
+.tpl-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow);}
+.tpl-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+.tpl-chan{font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;color:var(--aqua);text-transform:uppercase;letter-spacing:.4px;}
+.tpl-case{font-family:'Fraunces';font-size:14.5px;font-weight:600;margin:2px 0 8px;}
+.tpl-text{font-size:12.5px;line-height:1.5;color:var(--ink);background:var(--paper2);border-radius:10px;padding:10px 11px;white-space:pre-wrap;}
+.copy-btn{margin-top:8px;}
+
+/* ---- Pilot table ---- */
+.pilot-table{display:grid;gap:10px;}
+.pilot-row{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);}
+.pilot-row .param{font-family:'Fraunces';font-weight:600;font-size:14px;margin-bottom:8px;}
+.pilot-cols{display:grid;grid-template-columns:1fr;gap:8px;}
+@media(min-width:640px){.pilot-cols{grid-template-columns:repeat(3,1fr);}}
+.pilot-col{background:var(--paper2);border-radius:10px;padding:9px 10px;}
+.pilot-col .tag{margin-bottom:5px;}
+.pilot-col p{margin:0;font-size:12px;line-height:1.4;}
+
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:30px 10px;}
+.toast{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:12.5px;font-weight:600;
+  opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:50;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">🐟</div>
+      <div>
+        <h1>aquaECO Field Ops</h1>
+        <p>Omfeonix Agritech — Lead Gen Workspace</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="syncBadge" class="tag state" style="cursor:default;">○ Local only</span>
+      <button class="theme-btn" id="themeBtn" title="Toggle theme">◐</button>
+    </div>
+  </header>
+
+  <div style="background:var(--aqua-soft);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:11.5px;color:var(--muted);margin-bottom:10px;">
+    💾 If a Firebase project is configured (see <code>FIREBASE_CONFIG</code> near the top of this file), status/notes/checklist updates <b>sync live across every device</b>. Until then, data saves to this browser only. Export/Import below always works as a manual backup.
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="dash" class="active">Dashboard</button>
+    <button data-tab="contacts">Contacts</button>
+    <button data-tab="sequence">Sequence</button>
+    <button data-tab="templates">Templates</button>
+    <button data-tab="pilot">Pilot Terms</button>
+  </nav>
+
+  <section id="panel-dash" class="panel active"></section>
+  <section id="panel-contacts" class="panel"></section>
+  <section id="panel-sequence" class="panel"></section>
+  <section id="panel-templates" class="panel"></section>
+  <section id="panel-pilot" class="panel"></section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script id="app-data" type="application/json">{"contacts": [{"id": "c01", "tier": "Tier 1", "state": "NC", "segment": "Aquaculture", "org": "Blue Aquafarm", "name": "", "phone": "", "email": "Form on website", "website": "https://www.blueaquaint.com/farming", "facebook": "", "waLink": null, "notes": "Recirculating aquaculture producer relying on constant water-quality monitoring; strong early pilot fit"}, {"id": "c02", "tier": "Tier 1", "state": "TN", "segment": "Aquaponics", "org": "New Way Aquaponic Farms", "name": "Daryl", "phone": "(901) 314-3396", "email": "daryl@newwayaquaponicfarms.com", "website": "https://newwayaquaponicfarms.com/", "facebook": "", "waLink": "https://wa.me/19013143396", "notes": "Small teaching/demo/production site; fast feedback loop, good case-study candidate"}, {"id": "c03", "tier": "Tier 1", "state": "TN", "segment": "Aquaponics", "org": "Ounce of Hope", "name": "", "phone": "901-300-0522", "email": "info@ounceofhope.com", "website": "https://www.ounceofhope.com/", "facebook": "", "waLink": "https://wa.me/19013000522", "notes": "10,000 sq ft commercial indoor aquaponic farm; wants automation & traceability"}, {"id": "c04", "tier": "Tier 1", "state": "NC", "segment": "Aquaponics", "org": "Grow Dinner Aquaponics", "name": "", "phone": "", "email": "growdinner@aol.com", "website": "", "facebook": "https://www.facebook.com/GrowDinnerAquaponics/", "waLink": null, "notes": "Small engaged operator blending production and education; needs stable water quality"}, {"id": "c05", "tier": "Tier 1", "state": "SC", "segment": "Aquaponics", "org": "Pee Dee Aquaponics, LLC", "name": "", "phone": "+18433809742", "email": "", "website": "https://peedeeaquaponics.com/", "facebook": "", "waLink": "https://wa.me/18433809742", "notes": "AI-forward aquaponics operator; good fit for data-driven positioning"}, {"id": "c06", "tier": "Tier 1", "state": "SC", "segment": "Aquaculture", "org": "Southland Fisheries Corp", "name": "", "phone": "+18037764923", "email": "Form on website", "website": "https://www.southlandfisheries.com/", "facebook": "", "waLink": "https://wa.me/18037764923", "notes": "Established fish farm, pond stocking; fish-husbandry & water-quality focus"}, {"id": "c07", "tier": "Tier 1", "state": "SC", "segment": "Aquaculture", "org": "TCA Fish Farms, LLC", "name": "", "phone": "(803) 276-0853", "email": "cantay@bellsouth.net", "website": "https://www.tcafish.com/", "facebook": "", "waLink": "https://wa.me/18032760853", "notes": "Pond construction & fish delivery; practical water-management collaborator"}, {"id": "c08", "tier": "Tier 1", "state": "SC", "segment": "Aquaculture", "org": "High Valley Farm SC", "name": "", "phone": "(864) 878-3766", "email": "highvalleysc@gmail.com", "website": "", "facebook": "https://www.facebook.com/highvalleyfarmsc/", "waLink": "https://wa.me/18648783766", "notes": "Spring-water trout + vegetables; commercial multi-product operation"}, {"id": "c09", "tier": "Tier 1", "state": "NC", "segment": "Aquaculture", "org": "Star Ridge Aquatics LLC", "name": "", "phone": "(910) 947-5333", "email": "info@starridgeaquatics.com", "website": "https://itsthesway.com/star-ridge-aquatics-moore-county-ponds/", "facebook": "", "waLink": "https://wa.me/19109475333", "notes": "Warm-water producer with connected grower network - multiplier effect for pilots"}, {"id": "c10", "tier": "Tier 1", "state": "MS", "segment": "Aquaculture", "org": "Quiver River Aquaculture Inc.", "name": "Richard B. Moyer", "phone": "(662) 569-2545", "email": "Rickmoyer@yahoo.com", "website": "", "facebook": "https://www.facebook.com/QuiverRiverAquaculture/", "waLink": "https://wa.me/16625692545", "notes": "Small commercial catfish farm active since 1991; ideal early-stage test site"}, {"id": "c11", "tier": "Tier 1", "state": "MS", "segment": "Aquaculture", "org": "Bear Creek Fisheries, Inc.", "name": "", "phone": "(662) 246-5602", "email": "bcfinc82@gmail.com", "website": "", "facebook": "https://www.facebook.com/bearcreekfisheries/", "waLink": "https://wa.me/16622465602", "notes": "Multi-pond commercial catfish producer; aeration & feeding automation fit"}, {"id": "c12", "tier": "Tier 1", "state": "GA", "segment": "Aquaculture", "org": "Bramlett Trout Farms", "name": "", "phone": "(706) 838-4558", "email": "bramlett.trout@gmail.com", "website": "https://georgiagrown.com/member/bramlett-trout-farms/", "facebook": "", "waLink": "https://wa.me/17068384558", "notes": "Family-run cold-water trout hatchery; production-scale, credible field site"}, {"id": "c13", "tier": "Tier 1", "state": "GA", "segment": "Aquaculture", "org": "Owen and Williams Fish Farm, Inc.", "name": "", "phone": "(478) 892-3144", "email": "fishsales@owenandwilliams.com", "website": "https://www.owenandwilliams.com/", "facebook": "", "waLink": "https://wa.me/14788923144", "notes": "Commercial-scale hatchery/grow-out/transport; statewide distribution reach"}, {"id": "c14", "tier": "Tier 1", "state": "AL", "segment": "Aquaculture", "org": "Tombigbee Catfish Farms", "name": "Norman Green", "phone": "(251) 769-4917", "email": "elainegreen@bellsouth.net", "website": "", "facebook": "https://www.facebook.com/TombigbeeCatfishFarm", "waLink": "https://wa.me/12517694917", "notes": "Family-owned catfish fingerling producer, Clark County"}, {"id": "c15", "tier": "Tier 1", "state": "AL", "segment": "Aquaculture", "org": "Mac's Fish Farm", "name": "Wayne McLendon", "phone": "(334) 749-0986", "email": "", "website": "", "facebook": "", "waLink": "https://wa.me/13347490986", "notes": "Catfish fingerling producer, Lee County"}, {"id": "c16", "tier": "Tier 1", "state": "AL", "segment": "Aquaculture", "org": "Honey Hole Fisheries", "name": "Jeff Bagwell", "phone": "(205) 333-3665", "email": "jeff@honeyholefisheries.com", "website": "", "facebook": "https://www.facebook.com/people/Honey-Hole-Fisheries-LLC/100064031200107/", "waLink": "https://wa.me/12053333665", "notes": "Tilapia producer and hatchery, Tuscaloosa County"}, {"id": "c17", "tier": "Tier 1", "state": "MS", "segment": "Aquaculture", "org": "Magnolia Key Oyster Co.", "name": "", "phone": "(228) 217-1313", "email": "Form on website", "website": "https://msoysters.com/", "facebook": "", "waLink": "https://wa.me/12282171313", "notes": "Boutique cage-cultured oyster farm; needs reliable water-quality data"}, {"id": "c18", "tier": "Tier 1", "state": "NC", "segment": "Aquaponics (nonprofit)", "org": "100 Gardens", "name": "", "phone": "", "email": "info@100gardens.org", "website": "https://www.100gardens.org/", "facebook": "", "waLink": null, "notes": "Runs multiple functioning aquaponic systems across schools/community hubs; visibility + volume"}, {"id": "c19", "tier": "Tier 2", "state": "MS (regional, 13 states)", "segment": "Extension / Research Consortium", "org": "Southern Regional Aquaculture Center (SRAC)", "name": "Dr. Jimmy Avery (Director)", "phone": "662-686-3269", "email": "jimmy.avery@msstate.edu", "website": "https://srac.msstate.edu", "facebook": "", "waLink": "https://wa.me/16626863269", "notes": "USDA-sponsored, covers AL, AR, FL, GA, KY, LA, MS, NC, OK, PR, SC, TN, TX, USVI, VA - highest-leverage partner"}, {"id": "c20", "tier": "Tier 2", "state": "National", "segment": "Trade Association", "org": "National Aquaculture Association (NAA)", "name": "Caitlyn Czajkowski (Exec Dir)", "phone": "(251) 504-6995", "email": "naa@nationalaquaculture.org", "website": "https://www.nationalaquaculture.org", "facebook": "", "waLink": "https://wa.me/12515046995", "notes": "National policy voice for U.S. aquaculture; congressional & federal agency access"}, {"id": "c21", "tier": "Tier 2", "state": "National", "segment": "Trade Association", "org": "Catfish Farmers of America", "name": "Dr. Carole Engle", "phone": "", "email": "caroleengle2015@gmail.com", "website": "https://catfishfarmersofamerica.com/", "facebook": "", "waLink": null, "notes": "Strongest catfish-industry association; producers, suppliers, processors, marketers"}, {"id": "c22", "tier": "Tier 2", "state": "AL", "segment": "Trade Association", "org": "Alabama Catfish Producers", "name": "", "phone": "334-288-3900", "email": "", "website": "https://alfafarmers.org/", "facebook": "", "waLink": "https://wa.me/13342883900", "notes": "Division of AL Farmers Federation; ~85-89 farms, 29% of U.S. farm-raised catfish"}, {"id": "c23", "tier": "Tier 2", "state": "AL", "segment": "Extension / R&D Center", "org": "Alabama Fish Farming Center (AFFC)", "name": "", "phone": "(334) 624-4016", "email": "", "website": "https://agriculture.auburn.edu/sfaas/affc.php", "facebook": "", "waLink": "https://wa.me/13346244016", "notes": "Auburn University satellite lab; diagnostics, water-quality lab, producer workshops"}, {"id": "c24", "tier": "Tier 2", "state": "TN", "segment": "Trade Association", "org": "Tennessee Aquaculture Association (TNAQ)", "name": "", "phone": "(615) 837-5103", "email": "TN.Agriculture@tn.gov", "website": "https://www.tn.gov/agriculture", "facebook": "", "waLink": "https://wa.me/16158375103", "notes": "Statewide industry hub - producers, hatcheries, processors, extension ties"}, {"id": "c25", "tier": "Tier 2", "state": "GA", "segment": "Extension", "org": "UGA Cooperative Extension", "name": "", "phone": "706-542-3824", "email": "caesext@uga.edu", "website": "https://extension.uga.edu/", "facebook": "", "waLink": "https://wa.me/17065423824", "notes": "Statewide outreach in all 159 GA counties; pilot & grower-network access"}, {"id": "c26", "tier": "Tier 2", "state": "GA", "segment": "Research Lab", "org": "UGA Shellfish Research Lab", "name": "Thomas Bliss / Justin Manley", "phone": "912-598-2348", "email": "tbliss@uga.edu", "website": "https://gacoast.uga.edu/extension/shellfish-research-lab/", "facebook": "", "waLink": "https://wa.me/19125982348", "notes": "State's first oyster hatchery; research + regulatory + hatchery access"}, {"id": "c27", "tier": "Tier 2", "state": "SC", "segment": "Extension / Sea Grant", "org": "South Carolina Sea Grant Consortium", "name": "", "phone": "(843) 953-2078", "email": "info@scseagrant.org", "website": "https://www.scseagrant.org/", "facebook": "", "waLink": "https://wa.me/18439532078", "notes": "Research, extension, permitting/policy support for SC aquaculture"}, {"id": "c28", "tier": "Tier 2", "state": "MS", "segment": "Extension / R&D Center", "org": "Delta Research & Extension Aquaculture Programs", "name": "Dr. Jimmy Avery (Director)", "phone": "662-686-3273", "email": "jimmy.avery@msstate.edu", "website": "https://drec.msstate.edu/", "facebook": "", "waLink": "https://wa.me/16626863273", "notes": "294+ acres research ponds; tech-transfer pipeline to commercial producers"}, {"id": "c29", "tier": "Tier 2", "state": "NC", "segment": "University Research Facility", "org": "NC State University Fish Barn", "name": "David Andow", "phone": "", "email": "daandow@ncsu.edu", "website": "https://cals.ncsu.edu/applied-ecology/extension/aquaculture/nc-state-fish-barn/", "facebook": "", "waLink": null, "notes": "Research-grade controlled-environment facility; ideal for sensor validation + case studies"}, {"id": "c30", "tier": "Tier 3", "state": "GA", "segment": "Digital Aquaculture Tech", "org": "Ecto", "name": "", "phone": "", "email": "contact@ecto.com", "website": "https://www.ecto.com/", "facebook": "", "waLink": null, "notes": "Analytics/decision-support platform for producers - potential channel or co-sell partner"}, {"id": "c31", "tier": "Tier 3", "state": "MS", "segment": "Large-scale CEA (hydroponic)", "org": "Salad Days Produce", "name": "", "phone": "601-209-8611", "email": "info@saladdaysproduce.com", "website": "https://saladdaysproduce.com/", "facebook": "", "waLink": "https://wa.me/16012098611", "notes": "68,000 sq ft greenhouse, 3M heads lettuce/yr; large deployment reference once proven"}, {"id": "c32", "tier": "Tier 3", "state": "MS", "segment": "Vertical Farming / CEA", "org": "VertiGro Mississippi", "name": "", "phone": "1-800-955-6757", "email": "office@vertigro.com", "website": "https://vertigro.com/", "facebook": "", "waLink": "https://wa.me/18009556757", "notes": "Modular vertical-growing outfit; nutrient/EC monitoring fit"}, {"id": "c33", "tier": "Tier 3", "state": "SC", "segment": "University Research", "org": "Clemson University Aquaculture Research Lab", "name": "", "phone": "864-656-6182", "email": "", "website": "https://www.clemson.edu/", "facebook": "", "waLink": "https://wa.me/18646566182", "notes": "Freshwater fish + aquatic animal research labs; workforce & validation partner"}, {"id": "c34", "tier": "Tier 3", "state": "MS", "segment": "University Research Facility", "org": "MSU Hydroponics & CEA Research Facility", "name": "", "phone": "(662) 325-2323", "email": "", "website": "https://www.futuregrowers.cals.msstate.edu/", "facebook": "", "waLink": "https://wa.me/16623252323", "notes": "Nutrient-solution optimization & environmental control research site"}], "sequence": [{"id": "s01", "week": "Week 1-2", "stage": "Prep", "action": "Customize outreach materials per state (reference local species, system type, and pain point from research notes). Build 1-pager + short demo video.", "targets": "All tiers", "goal": "Materials ready; state-specific talking points drafted"}, {"id": "s02", "week": "Week 1-2", "stage": "Tier 1 outreach", "action": "Direct call/email to Tier 1 growers in AL, MS, GA first (largest catfish/aquaculture concentration) - offer free or discounted pilot in exchange for case study.", "targets": "Tombigbee Catfish Farms, Mac's Fish Farm, Honey Hole Fisheries (AL); Quiver River, Bear Creek Fisheries, Magnolia Key Oyster (MS); Bramlett Trout Farms, Owen and Williams (GA)", "goal": "3-5 pilot conversations booked"}, {"id": "s03", "week": "Week 2-3", "stage": "Tier 1 outreach", "action": "Direct outreach to Tier 1 in TN, NC, SC.", "targets": "New Way Aquaponic Farms, Ounce of Hope (TN); Blue Aquafarm, Grow Dinner Aquaponics, Star Ridge Aquatics, 100 Gardens (NC); Pee Dee Aquaponics, Southland Fisheries, TCA Fish Farms, High Valley Farm (SC)", "goal": "3-5 additional pilot conversations booked"}, {"id": "s04", "week": "Week 3-4", "stage": "Tier 2 partner intro", "action": "Reach out to Southern Regional Aquaculture Center and state extension offices - propose a co-hosted demo day or sponsored trial slot.", "targets": "SRAC (Dr. Jimmy Avery), UGA Cooperative Extension, Delta Research & Extension (MS), NC State Fish Barn", "goal": "1-2 extension partnerships confirmed; access to grower mailing lists/events"}, {"id": "s05", "week": "Week 3-4", "stage": "Tier 2 association intro", "action": "Contact national/state trade associations for member introductions and newsletter placement.", "targets": "National Aquaculture Association, Catfish Farmers of America, Alabama Catfish Producers, Tennessee Aquaculture Association", "goal": "Listed in 1+ association newsletter or member directory"}, {"id": "s06", "week": "Week 4-5", "stage": "Pilot kickoff", "action": "Install/onboard first 2-3 confirmed Tier 1 pilots. Begin data collection (yield, labor, or loss-reduction baseline).", "targets": "First confirmed Tier 1 sites", "goal": "Pilots live; baseline metrics captured"}, {"id": "s07", "week": "Week 5-8", "stage": "Funding-aligned entry", "action": "Identify USDA/SBIR-STTR/climate-tech grant programs each Tier 1/2 prospect may qualify for; offer to help position pilot cost inside an existing grant application.", "targets": "Growers + SRAC / extension partners", "goal": "1+ grant-supported pilot in pipeline"}, {"id": "s08", "week": "Week 6-8", "stage": "Case study development", "action": "Document results from earliest pilots (before/after data, quotes). Draft short case study for each.", "targets": "Completed Tier 1 pilots", "goal": "1-2 published case studies"}, {"id": "s09", "week": "Week 8-10", "stage": "Amplify via partners", "action": "Co-market case studies through extension newsletters, association channels, and a joint demo/webinar with SRAC or a university research facility.", "targets": "SRAC, UGA Extension, Clemson, NC State Fish Barn, South Carolina Sea Grant", "goal": "Warm inbound leads from partner audiences"}, {"id": "s10", "week": "Week 8-10", "stage": "Tier 3 outreach", "action": "Approach larger CEA/scale operators and tech peers using Tier 1 case studies as proof.", "targets": "Salad Days Produce, VertiGro Mississippi, Ecto (co-sell), Clemson, MSU CEA Facility", "goal": "1-2 larger deployment or channel conversations opened"}, {"id": "s11", "week": "Week 10-12", "stage": "Scale & repeat", "action": "Roll the same sequence into remaining un-contacted target customers and pilot partners across all 7 states, prioritized by tier.", "targets": "Remaining Contact List entries", "goal": "Full contact list worked; pipeline of paid rollouts building"}], "templates": [{"id": "t01", "channel": "Facebook Messenger", "useCase": "First contact (Tier 1 grower)", "text": "Hi [Name], I came across [Farm Name]'s page and really like what you're doing with [species/system]. I'm with Omfeonix Agritech - we make aquaECO, a water-quality monitoring & automation system built for farms like yours. We're offering a free/discounted pilot to a few Southern operations this quarter. Would you be open to a quick call to see if it's a fit for your ponds/tanks?"}, {"id": "t02", "channel": "Facebook Messenger", "useCase": "Follow-up (no reply after 4-5 days)", "text": "Hi [Name], just following up in case this got buried - happy to send a 2-minute video instead of a call if that's easier. No pressure either way, just wanted to make sure you saw it!"}, {"id": "t03", "channel": "Facebook Group post", "useCase": "Value-first intro (join group, answer a real question first)", "text": "Great question on [topic]. In my experience, keeping DO and ammonia readings on a consistent schedule makes the biggest difference, especially heading into warmer weeks. We actually built a small automated monitor (aquaECO) for exactly this after seeing how much time manual testing eats up - happy to share what we learned if useful to anyone here."}, {"id": "t04", "channel": "Facebook Page post", "useCase": "Case study / social proof post", "text": "[Farm Name] cut their manual water testing time by [X]% and caught an oxygen drop before it became a problem - here's how. [30-sec video / before-after photo]. If you run a pond, tank, or RAS system in [state] and want to try aquaECO free for [X] weeks, send us a message."}, {"id": "t05", "channel": "Facebook Ad (Click-to-WhatsApp)", "useCase": "Geo-targeted lead ad copy", "text": "Southern catfish & aquaponics farmers: stop guessing on water quality. aquaECO alerts you before problems cost you fish. Message us on WhatsApp for a free pilot in [state]. [Click-to-WhatsApp button]"}, {"id": "t06", "channel": "WhatsApp Business", "useCase": "Business profile description", "text": "Omfeonix Agritech | aquaECO water-quality monitoring & automation for aquaculture & aquaponics farms. Serving AL, FL, GA, MS, NC, SC, TN. Message us for a free pilot."}, {"id": "t07", "channel": "WhatsApp Business", "useCase": "First contact (after they initiate / click-to-WhatsApp)", "text": "Hi [Name], thanks for reaching out! aquaECO monitors [pH/DO/ammonia/temp] in real time and alerts you before issues hurt your fish or crop. We're running free pilots with a handful of farms in [state] this quarter - want me to send a 1-minute video showing how it works on a farm like yours?"}, {"id": "t08", "channel": "WhatsApp Business", "useCase": "Photo/voice-note follow-up", "text": "[Attach photo of aquaECO reading or short voice note] Here's a live reading from one of our pilot farms - caught a dissolved-oxygen dip at 4am before it became a losing-fish problem. Want to try this on your system for a few weeks, no cost?"}, {"id": "t09", "channel": "WhatsApp Broadcast List", "useCase": "Weekly value broadcast (after pilot signup, nurture)", "text": "This week's water-quality tip: [seasonal tip relevant to region/species]. Also - [Farm Name] just wrapped week 2 of their aquaECO pilot and caught [specific save]. Reply STOP to opt out anytime."}, {"id": "t10", "channel": "WhatsApp Business", "useCase": "Partner/association introduction request", "text": "Hi [Extension Contact], I'm with Omfeonix Agritech (aquaECO water-quality monitoring). We're offering free pilots to a few [state] producers and would love your guidance on which farms might be a good fit, or whether a short demo at an upcoming workshop/field day would be useful. Happy to send a one-pager."}], "pilot": [{"param": "Cost to prospect", "free": "Free \u2014 hardware loan + free install", "discounted": "30\u201350% off list price", "research": "Free \u2014 framed as research collaboration, not a sale"}, {"param": "Units deployed", "free": "1 unit (one pond/tank/RAS loop)", "discounted": "Multiple units (multi-pond/multi-zone)", "research": "1\u20132 units, instrumented for data collection"}, {"param": "Duration", "free": "6\u20138 weeks", "discounted": "8\u201312 weeks, with a defined graduate-to-paid decision point", "research": "One full season or semester, aligned to their research calendar"}, {"param": "What's included", "free": "Monitoring (pH, DO, temp, ammonia), phone alerts, weekly check-in call/WhatsApp", "discounted": "Same monitoring/alerts + full onboarding session + monthly review meeting", "research": "Monitoring/alerts + raw data access for their own study design"}, {"param": "What you ask in return", "free": "Name/farm/photo use for case study, short testimonial, optional 2-3 min video", "discounted": "Case study + reference call they'll take from future prospects", "research": "Data shared for publication/presentation credit; co-authored case study"}, {"param": "End of pilot", "free": "Keep unit at discounted 'founding customer' price, or return it", "discounted": "Convert to paid contract at agreed pilot-to-paid pricing", "research": "Extend as ongoing instrumented research site; optional intro to grower network"}, {"param": "Cap / guardrail", "free": "Max 3-5 free units live at once; require weekly check-in commitment before shipping", "discounted": "Cap to farms with existing budget/scale to justify multi-unit deployment", "research": "Prioritize sites most likely to publish/present (SRAC, land-grant universities)"}]}</script>
+<script id="app-state" type="application/json">{"contactStatus": {}, "sequenceDone": {}, "theme": null}</script>
+<script type="module">
+(function(){
+  "use strict";
+
+  // ============================================================
+  // FIREBASE CONFIG — paste your Firebase project's web app config
+  // here (Firebase Console → Project settings → Your apps → Web app).
+  // Leave apiKey as "YOUR_API_KEY" to run in local-only mode.
+  // ============================================================
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyD8knKY8QK4wOORG4kQHCL7RV5_6yRqkvk",
+    authDomain: "aquaecomkt.firebaseapp.com",
+    projectId: "aquaecomkt",
+    storageBucket: "aquaecomkt.firebasestorage.app",
+    messagingSenderId: "885200700772",
+    appId: "1:885200700772:web:91dc8ec2bae0efa6526671"
+  };
+  const FIREBASE_ENABLED = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+  const FB_SDK = "https://www.gstatic.com/firebasejs/10.13.0/";
+  let fb = null;           // { db, doc, setDoc, onSnapshot, collection, serverTimestamp }
+  let fbReady = false;
+
+  const STORAGE_KEY = 'aquaeco_state_v1';
+
+  const DATA = JSON.parse(document.getElementById('app-data').textContent);
+  let STATE = loadState();
+  STATE.contactStatus = STATE.contactStatus || {};
+  STATE.sequenceDone = STATE.sequenceDone || {};
+  STATE.theme = STATE.theme || null;
+
+  const STATUS_OPTS = ["Not Contacted","Contacted","Responded","Pilot Scheduled","Pilot Active","Converted","Declined"];
+  const STATUS_COLOR = {
+    "Not Contacted":"#9c917a","Contacted":"#c98a2c","Responded":"#2fb6a8",
+    "Pilot Scheduled":"#6a4c8c","Pilot Active":"#1a5c5a","Converted":"#1f7a44","Declined":"#c1573c"
+  };
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    }catch(e){ /* storage unavailable (private browsing, etc) — fall through */ }
+    try{
+      return JSON.parse(document.getElementById('app-state').textContent) || {};
+    }catch(e){ return {}; }
+  }
+
+  function getContactState(id){
+    return STATE.contactStatus[id] || {status:"Not Contacted", notes:""};
+  }
+
+  function schedulePersist(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }
+    catch(e){ showToast('Could not save locally — storage unavailable in this browser'); }
+  }
+
+  // ---------- FIREBASE SYNC LAYER ----------
+  function setSyncBadge(state){
+    const b = document.getElementById('syncBadge');
+    if (!b) return;
+    const map = {
+      off:      ['○ Local only', 'state'],
+      connecting: ['◐ Connecting…', 'state'],
+      live:     ['● Synced live', 'tier1'],
+      error:    ['⚠ Sync error — local only', 'tier3'],
+    };
+    const [text, cls] = map[state] || map.off;
+    b.textContent = text;
+    b.className = 'tag ' + cls;
+  }
+
+  async function initFirebase(){
+    if (!FIREBASE_ENABLED){ setSyncBadge('off'); return; }
+    setSyncBadge('connecting');
+    try{
+      const { initializeApp } = await import(FB_SDK + "firebase-app.js");
+      const { getFirestore, doc, setDoc, onSnapshot, collection, serverTimestamp } =
+        await import(FB_SDK + "firebase-firestore.js");
+      const { getAuth, signInAnonymously } = await import(FB_SDK + "firebase-auth.js");
+
+      const app = initializeApp(FIREBASE_CONFIG);
+      const auth = getAuth(app);
+      await signInAnonymously(auth);
+      const db = getFirestore(app);
+      fb = { db, doc, setDoc, onSnapshot, collection, serverTimestamp };
+      fbReady = true;
+      setSyncBadge('live');
+
+      onSnapshot(collection(db, 'contactStatus'), snap => {
+        snap.docChanges().forEach(ch => {
+          if (ch.type === 'removed') return;
+          STATE.contactStatus[ch.doc.id] = ch.doc.data();
+        });
+        schedulePersist();
+        renderContactList();
+        renderDash();
+      }, () => setSyncBadge('error'));
+
+      onSnapshot(collection(db, 'sequenceDone'), snap => {
+        snap.docChanges().forEach(ch => {
+          if (ch.type === 'removed') return;
+          STATE.sequenceDone[ch.doc.id] = !!ch.doc.data().done;
+        });
+        schedulePersist();
+        renderSequence();
+        renderDash();
+      }, () => setSyncBadge('error'));
+
+    }catch(e){
+      console.error('Firebase init failed:', e);
+      setSyncBadge('error');
+    }
+  }
+
+  function pushContactStatus(id){
+    if (!fbReady) return;
+    const cs = getContactState(id);
+    fb.setDoc(fb.doc(fb.db, 'contactStatus', id), {
+      status: cs.status, notes: cs.notes, updatedAt: fb.serverTimestamp()
+    }, {merge:true}).catch(()=>setSyncBadge('error'));
+  }
+  function pushSequenceDone(id){
+    if (!fbReady) return;
+    fb.setDoc(fb.doc(fb.db, 'sequenceDone', id), {
+      done: !!STATE.sequenceDone[id], updatedAt: fb.serverTimestamp()
+    }, {merge:true}).catch(()=>setSyncBadge('error'));
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(()=>t.classList.remove('show'), 1600);
+  }
+
+  // ---------- THEME ----------
+  function applyTheme(){
+    if (STATE.theme === 'dark') document.documentElement.setAttribute('data-theme','dark');
+    else if (STATE.theme === 'light') document.documentElement.setAttribute('data-theme','light');
+    else document.documentElement.removeAttribute('data-theme');
+  }
+  applyTheme();
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    const cur = STATE.theme;
+    STATE.theme = cur === 'dark' ? 'light' : (cur === 'light' ? null : 'dark');
+    applyTheme();
+    schedulePersist();
+  });
+
+  // ---------- TABS ----------
+  document.getElementById('tabs').addEventListener('click', function(e){
+    const btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+
+  // ---------- DASHBOARD ----------
+  function renderDash(){
+    const el = document.getElementById('panel-dash');
+    const total = DATA.contacts.length;
+    const counts = {};
+    STATUS_OPTS.forEach(s=>counts[s]=0);
+    DATA.contacts.forEach(c=>{ const s = getContactState(c.id).status; counts[s] = (counts[s]||0)+1; });
+    const seqDone = DATA.sequence.filter(s=>STATE.sequenceDone[s.id]).length;
+    const pct = Math.round(seqDone / DATA.sequence.length * 100);
+
+    let html = '';
+    html += '<div class="stat-grid">';
+    html += statCard(total,'Total Contacts');
+    html += statCard(counts['Contacted']+counts['Responded']+counts['Pilot Scheduled']+counts['Pilot Active']+counts['Converted'],'In Motion');
+    html += statCard(counts['Pilot Active'],'Active Pilots');
+    html += statCard(counts['Converted'],'Converted');
+    html += '</div>';
+
+    html += '<div class="section-title">📋 Outreach sequence progress</div>';
+    html += '<div class="progress-bar"><div style="width:'+pct+'%"></div></div>';
+    html += '<p style="font-size:12px;color:var(--muted);margin:6px 0 0;">'+seqDone+' of '+DATA.sequence.length+' stages complete</p>';
+
+    html += '<div class="section-title">🎯 Pipeline by status</div>';
+    STATUS_OPTS.forEach(s=>{
+      const w = total ? Math.round(counts[s]/total*100) : 0;
+      html += '<div class="funnel-row"><span class="flabel">'+s+'</span><div class="progress-bar" style="flex:1;"><div style="width:'+w+'%;background:'+STATUS_COLOR[s]+'"></div></div><span class="fcount">'+counts[s]+'</span></div>';
+    });
+
+    html += '<div class="section-title">💾 Backup / transfer data</div>';
+    html += '<div class="ccard-actions">' +
+      '<button class="btn primary" id="exportBtn">⬇️ Export progress (.json)</button>' +
+      '<button class="btn" id="importBtn">⬆️ Import progress (.json)</button>' +
+      '<input type="file" id="importFile" accept="application/json" style="display:none">' +
+    '</div>';
+
+    el.innerHTML = html;
+    document.getElementById('exportBtn').addEventListener('click', exportState);
+    document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', importState);
+  }
+  function statCard(n,l){
+    return '<div class="stat"><div class="num">'+n+'</div><div class="lbl">'+l+'</div></div>';
+  }
+
+  // ---------- CONTACTS ----------
+  let contactFilter = { tier:'', state:'', search:'' };
+
+  function renderContacts(){
+    const el = document.getElementById('panel-contacts');
+    const states = [...new Set(DATA.contacts.map(c=>c.state))].sort();
+
+    let html = '<div class="filters">';
+    html += '<select id="fTier"><option value="">All tiers</option><option value="Tier 1">Tier 1</option><option value="Tier 2">Tier 2</option><option value="Tier 3">Tier 3</option></select>';
+    html += '<select id="fState"><option value="">All states</option>' + states.map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join('') + '</select>';
+    html += '<input type="text" id="fSearch" placeholder="Search org, contact, notes…">';
+    html += '</div>';
+    html += '<div id="contactList"></div>';
+    el.innerHTML = html;
+
+    document.getElementById('fTier').value = contactFilter.tier;
+    document.getElementById('fState').value = contactFilter.state;
+    document.getElementById('fSearch').value = contactFilter.search;
+
+    document.getElementById('fTier').addEventListener('change', e=>{ contactFilter.tier = e.target.value; renderContactList(); });
+    document.getElementById('fState').addEventListener('change', e=>{ contactFilter.state = e.target.value; renderContactList(); });
+    document.getElementById('fSearch').addEventListener('input', e=>{ contactFilter.search = e.target.value; renderContactList(); });
+
+    renderContactList();
+  }
+
+  function renderContactList(){
+    const host = document.getElementById('contactList');
+    const q = contactFilter.search.trim().toLowerCase();
+    const list = DATA.contacts.filter(c=>{
+      if (contactFilter.tier && c.tier !== contactFilter.tier) return false;
+      if (contactFilter.state && c.state !== contactFilter.state) return false;
+      if (q){
+        const hay = (c.org+' '+c.name+' '+c.notes+' '+c.segment).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    if (!list.length){ host.innerHTML = '<div class="empty">No contacts match those filters.</div>'; return; }
+    host.innerHTML = list.map(cardHtml).join('');
+
+    host.querySelectorAll('select.status-sel').forEach(sel=>{
+      sel.addEventListener('change', e=>{
+        const id = e.target.dataset.id;
+        const cs = getContactState(id);
+        cs.status = e.target.value;
+        STATE.contactStatus[id] = cs;
+        e.target.previousElementSibling.style.background = STATUS_COLOR[cs.status];
+        schedulePersist();
+        pushContactStatus(id);
+        renderDash();
+      });
+    });
+    host.querySelectorAll('textarea.note-in').forEach(ta=>{
+      ta.addEventListener('change', e=>{
+        const id = e.target.dataset.id;
+        const cs = getContactState(id);
+        cs.notes = e.target.value;
+        STATE.contactStatus[id] = cs;
+        schedulePersist();
+        pushContactStatus(id);
+      });
+    });
+    host.querySelectorAll('.copy-tpl').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const org = b.dataset.org, name = b.dataset.name || '[Name]';
+        const tpl = DATA.templates.find(t=>t.id === b.dataset.tplid);
+        if (!tpl) return;
+        const text = tpl.text.replace(/\[Name\]/g, name).replace(/\[Farm Name\]/g, org);
+        copyText(text);
+      });
+    });
+  }
+
+  function cardHtml(c){
+    const cs = getContactState(c.id);
+    const tierClass = c.tier === 'Tier 1' ? 'tier1' : c.tier === 'Tier 2' ? 'tier2' : 'tier3';
+    let rows = '';
+    if (c.name) rows += '<div class="contact-row">👤 ' + esc(c.name) + '</div>';
+    if (c.phone) rows += '<div class="contact-row">📞 <a href="tel:'+esc(c.phone.replace(/[^\d+]/g,''))+'">'+esc(c.phone)+'</a></div>';
+    if (c.email && c.email.includes('@')) rows += '<div class="contact-row">✉️ <a href="mailto:'+esc(c.email)+'">'+esc(c.email)+'</a></div>';
+    if (c.website) rows += '<div class="contact-row">🌐 <a href="'+esc(c.website)+'" target="_blank" rel="noopener">Website</a></div>';
+
+    let actions = '';
+    if (c.facebook){
+      actions += '<a class="btn fb" href="'+esc(c.facebook)+'" target="_blank" rel="noopener">📘 Message on Facebook</a>';
+    } else {
+      actions += '<a class="btn" href="https://www.facebook.com/search/pages/?q='+encodeURIComponent(c.org)+'" target="_blank" rel="noopener">🔍 Find Facebook page</a>';
+    }
+    if (c.waLink){
+      actions += '<a class="btn wa" href="'+esc(c.waLink)+'" target="_blank" rel="noopener">💬 WhatsApp</a>';
+    }
+    const waTpl = DATA.templates.find(t=>t.channel==='WhatsApp Business' && t.useCase.startsWith('First contact'));
+    if (waTpl) actions += '<button class="btn copy-tpl" data-tplid="'+waTpl.id+'" data-org="'+esc(c.org)+'" data-name="'+esc(c.name)+'">📋 Copy WhatsApp opener</button>';
+    const fbTpl = DATA.templates.find(t=>t.channel==='Facebook Messenger' && t.useCase.startsWith('First contact'));
+    if (fbTpl) actions += '<button class="btn copy-tpl" data-tplid="'+fbTpl.id+'" data-org="'+esc(c.org)+'" data-name="'+esc(c.name)+'">📋 Copy Messenger opener</button>';
+
+    return '' +
+      '<div class="ccard">' +
+        '<div class="ccard-head">' +
+          '<div><h3>'+esc(c.org)+'</h3>' +
+            '<div class="tags"><span class="tag '+tierClass+'">'+esc(c.tier)+'</span><span class="tag state">'+esc(c.state)+'</span><span class="tag state">'+esc(c.segment)+'</span></div>' +
+          '</div>' +
+        '</div>' +
+        (c.notes ? '<div class="notes-line">'+esc(c.notes)+'</div>' : '') +
+        rows +
+        '<div class="ccard-actions">'+actions+'</div>' +
+        '<div class="status-row">' +
+          '<span class="status-dot" style="background:'+STATUS_COLOR[cs.status]+'"></span>' +
+          '<select class="status-sel" data-id="'+c.id+'">' +
+            STATUS_OPTS.map(s=>'<option value="'+s+'" '+(s===cs.status?'selected':'')+'>'+s+'</option>').join('') +
+          '</select>' +
+        '</div>' +
+        '<textarea class="note-in" data-id="'+c.id+'" placeholder="Notes…">'+esc(cs.notes)+'</textarea>' +
+      '</div>';
+  }
+
+  // ---------- SEQUENCE ----------
+  function renderSequence(){
+    const el = document.getElementById('panel-sequence');
+    const done = DATA.sequence.filter(s=>STATE.sequenceDone[s.id]).length;
+    const pct = Math.round(done/DATA.sequence.length*100);
+    let html = '<div class="progress-bar"><div style="width:'+pct+'%"></div></div>';
+    html += '<p style="font-size:12px;color:var(--muted);margin:6px 0 14px;">'+done+' of '+DATA.sequence.length+' stages complete</p>';
+    html += DATA.sequence.map(s=>{
+      const isDone = !!STATE.sequenceDone[s.id];
+      return '<div class="seq-item '+(isDone?'done':'')+'">' +
+        '<div class="seq-check" data-id="'+s.id+'">'+(isDone?'✓':'')+'</div>' +
+        '<div>' +
+          '<div class="seq-week">'+esc(s.week)+' · '+esc(s.stage)+'</div>' +
+          '<h4>'+esc(s.stage)+'</h4>' +
+          '<p>'+esc(s.action)+'</p>' +
+          '<div class="meta"><b>Targets:</b> '+esc(s.targets)+'</div>' +
+          '<div class="meta"><b>Goal:</b> '+esc(s.goal)+'</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    el.innerHTML = html;
+    el.querySelectorAll('.seq-check').forEach(chk=>{
+      chk.addEventListener('click', e=>{
+        const id = e.currentTarget.dataset.id;
+        STATE.sequenceDone[id] = !STATE.sequenceDone[id];
+        schedulePersist();
+        pushSequenceDone(id);
+        renderSequence();
+        renderDash();
+      });
+    });
+  }
+
+  // ---------- TEMPLATES ----------
+  function renderTemplates(){
+    const el = document.getElementById('panel-templates');
+    el.innerHTML = DATA.templates.map(t=>
+      '<div class="tpl-card">' +
+        '<div class="tpl-head"><span class="tpl-chan">'+esc(t.channel)+'</span></div>' +
+        '<div class="tpl-case">'+esc(t.useCase)+'</div>' +
+        '<div class="tpl-text">'+esc(t.text)+'</div>' +
+        '<button class="btn primary copy-btn" data-text="'+encodeURIComponent(t.text)+'">📋 Copy template</button>' +
+      '</div>'
+    ).join('');
+    el.querySelectorAll('.copy-btn').forEach(b=>{
+      b.addEventListener('click', ()=>copyText(decodeURIComponent(b.dataset.text)));
+    });
+  }
+
+  // ---------- PILOT ----------
+  function renderPilot(){
+    const el = document.getElementById('panel-pilot');
+    el.innerHTML = '<div class="pilot-table">' + DATA.pilot.map(r=>
+      '<div class="pilot-row">' +
+        '<div class="param">'+esc(r.param)+'</div>' +
+        '<div class="pilot-cols">' +
+          '<div class="pilot-col"><span class="tag tier1">Free</span><p>'+esc(r.free)+'</p></div>' +
+          '<div class="pilot-col"><span class="tag tier3">Discounted</span><p>'+esc(r.discounted)+'</p></div>' +
+          '<div class="pilot-col"><span class="tag tier2">Research</span><p>'+esc(r.research)+'</p></div>' +
+        '</div>' +
+      '</div>'
+    ).join('') + '</div>';
+  }
+
+  // ---------- helpers ----------
+  function exportState(){
+    const blob = new Blob([JSON.stringify(STATE, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'aquaeco-progress-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Progress exported');
+  }
+  function importState(e){
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const imported = JSON.parse(ev.target.result);
+        STATE = imported;
+        STATE.contactStatus = STATE.contactStatus || {};
+        STATE.sequenceDone = STATE.sequenceDone || {};
+        schedulePersist();
+        applyTheme();
+        renderDash(); renderContactList(); renderSequence();
+        showToast('Progress imported');
+      }catch(err){ showToast('Could not read that file'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard')).catch(()=>fallbackCopy(text));
+    } else fallbackCopy(text);
+  }
+  function fallbackCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); showToast('Copied to clipboard'); }catch(e){ showToast('Copy failed — select manually'); }
+    document.body.removeChild(ta);
+  }
+
+  renderDash();
+  renderContacts();
+  renderSequence();
+  renderTemplates();
+  renderPilot();
+  initFirebase();
+})();
+</script>
+</body>
+</html>
